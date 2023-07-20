@@ -2,7 +2,12 @@
 import xCrawl from 'x-crawl';
 import { set } from 'lodash';
 
+
 const domain = "https://www.yidoutang.com/case-2300783.html";
+
+// const shape = [2, 3,4,5,6,7,8]; // 一居室、二居室、三居室、四居室、 6= 复式、8=别墅、7=其它
+// const type =[1,2,3,,6,7,10,11,14,15,16,9] // 北欧、现代简约 、美式、日式、混搭、中式、法式、工业风、轻奢、复古、其他风格
+
 const myXCrawl = xCrawl({ maxRetry: 3});
 
 
@@ -42,7 +47,7 @@ const defaultInfo: infoType = {
 
 
 const selectorArr: {selector: string, key: string, label: string}[] = [{
-  selector: ">h1",
+  selector: "h1",
   key: 'title',
   label: '标题'
 },
@@ -78,21 +83,21 @@ const selectorArr: {selector: string, key: string, label: string}[] = [{
 }
 ];
 
-// #caseDetail-main > div.case-content.newcase-content > div:nth-child(1) > div.info > div:nth-child(1)
+
 
 const ownerSelectorArr = [{
-  selector: 'div.info > div:nth-child(1)',
+  selector: "info > div:nth-child(1)",
   key:["owner","job"],
   label: "职业"
 },
 {
-  selector: 'div.info > div:nth-child(2)',
+  selector: "info > div:nth-child(2)",
   key: ["owner","age"],
   label: "年龄"
 },
 {
-  selector: 'div.info > div:nth-child(3)',
-  key: ["owner", "desc"],
+  selector: "info > div:nth-child(3)",
+  key: ["owner", "age"],
   label: "个人简介"
 }]
 
@@ -103,41 +108,37 @@ myXCrawl.crawlPage(domain).then(async (res) => {
 
   const currentInfo = {...defaultInfo};
 
- // base info
-  for (const selector of selectorArr) {
-    const v = await page.$eval(`#caseDetail-main ${selector.selector}`, (node: Element) => node.textContent?.trim()) 
-    set(currentInfo, selector.key, v)
-  }
+  // base info
+   await page.$eval("#caseDetail-main", (node: Element) => {
+    selectorArr.forEach(o => {
+      const v = node.querySelector(o.selector)?.textContent;
+      currentInfo[o.key] = v;
+    }) 
+  });
 
   console.log(currentInfo)
 
+  await page.$$eval(".part", (elements: Element[]) => {
+    elements.forEach((e) => {
+      const partTitle = e.querySelector(".title")?.textContent?.trim();
 
-  const partList = await page.$$(".part");
-  
-  for (const p of partList) {
-    const partTitle = await p.$eval(".title", node => node?.textContent?.trim());
+      if(partTitle === "屋主信息") {
+        ownerSelectorArr.forEach(o => {
+          const v = e.querySelector(o.selector);
+          set(currentInfo, o.key, v);
+        })
 
-    if(partTitle === "屋主信息") {
+      } else if (partTitle === "前言") {
+          const content = e.querySelector(".text")?.textContent?.trim();
+          set(currentInfo, "introduction", content);
+      } else {
 
-      for (const s of ownerSelectorArr) {
-        try {
-          // 简介不确定
-          const v = await p.$eval(s.selector, node => node.textContent?.trim().split("\n")[1].trim());       
-          set(currentInfo, s.key, v);
-        } catch (error) {
-          console.error('ownerSelectorArr error ' + s.label)
-        }       
       }
-    }
+    })
+  })
 
-    // } else
-     if (partTitle === "前言") {
-        const content = await p.$eval(".text", node => node?.textContent?.trim());
-        set(currentInfo, "introduction", content);
-    }
-    
-  }
   console.log(currentInfo)
+
   // 关闭浏览器
   browser.close()
 })
