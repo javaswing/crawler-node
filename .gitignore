@@ -3,3 +3,4 @@ node_modules
 config.ts
 record.json
 .vscode
+*.xlsx
