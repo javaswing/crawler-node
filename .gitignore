@@ -4,3 +4,5 @@ config.ts
 record.json
 .vscode
 *.xlsx
+.cache
+.puppeteerrc.cjs

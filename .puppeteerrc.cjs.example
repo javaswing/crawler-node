@@ -1,0 +1,11 @@
+const {join} = require('path');
+
+/**
+ * @type {import("puppeteer").Configuration}
+ */
+module.exports = {
+  cacheDirectory: join(__dirname, '.cache', 'puppeteer'),
+  executablePath: join(__dirname,".cache","chrome-mac/Chromium.app/Contents/MacOS/Chromium")
+//   skipDownload: false,
+//   downloadBaseUrl: "https://cdn.npmmirror.com/binaries/chrome-for-testing"
+};
